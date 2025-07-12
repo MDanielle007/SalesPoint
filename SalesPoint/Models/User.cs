@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace SalesPoint.Models
 {
-    public class User
+    public class User : BaseEntity
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         public string Username { get; set; }
 
@@ -25,5 +25,6 @@ namespace SalesPoint.Models
 
         public string Phone { get; set; }
 
+        public ICollection<Transaction> Transactions { get; set; }
     }
 }
