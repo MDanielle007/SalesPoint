@@ -7,7 +7,7 @@ namespace SalesPoint.Models
     {
         public int Id { get; set; }
 
-        public int ProductCode { get; set; }
+        public string ProductCode { get; set; }
 
         public string Name { get; set; }
 

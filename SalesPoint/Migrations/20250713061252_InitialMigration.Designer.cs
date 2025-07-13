@@ -12,7 +12,7 @@ using SalesPoint.Data;
 namespace SalesPoint.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250712215027_InitialMigration")]
+    [Migration("20250713061252_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -133,8 +133,9 @@ namespace SalesPoint.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ProductCode")
-                        .HasColumnType("int");
+                    b.Property<string>("ProductCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
