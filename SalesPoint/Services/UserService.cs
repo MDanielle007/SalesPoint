@@ -35,13 +35,13 @@ namespace SalesPoint.Services
         {
             try
             {
-                if(await _userRepository.UsernameExistsAsync(userDTO.Username){
+                if(await _userRepository.UsernameExistsAsync(userDTO.Username)){
                     throw new BadRequestException("Username already exists");
                 }
-                if (await _userRepository.EmailExistsAsync(userDTO.Email){
+                if (await _userRepository.EmailExistsAsync(userDTO.Email)){
                     throw new BadRequestException("Email already exists");
                 }
-                if (await _userRepository.EmployeeIdExistsAsync(userDTO.EmployeeId){
+                if (await _userRepository.EmployeeIdExistsAsync(userDTO.EmployeeId)){
                     throw new BadRequestException("Employee ID already exists");
                 }
 
@@ -202,7 +202,7 @@ namespace SalesPoint.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error changing password of user with id: {id}");
+                _logger.LogError(ex, $"Error changing password of user with id: {userId}");
                 throw;
             }
         }
