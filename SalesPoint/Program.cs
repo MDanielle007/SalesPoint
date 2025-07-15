@@ -50,6 +50,9 @@ namespace SalesPoint
 
             builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
+            builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            builder.Services.AddScoped<AuditLogService>();
+
             builder.Services.AddScoped<IProductRepository, ProductRepository>();
             builder.Services.AddScoped<IProductService, ProductService>();
 
