@@ -16,7 +16,7 @@ namespace SalesPoint
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args) // Fix: Mark Main as async and change return type to Task
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +33,7 @@ namespace SalesPoint
                 options.Password.RequireUppercase = false;
                 options.Password.RequireNonAlphanumeric = false;
             })
-                .AddEntityFrameworkStores<AppDbContext>() // Fix: Ensure the correct namespace is included
+                .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
 
             // Add JWT Authentication
@@ -62,7 +62,7 @@ namespace SalesPoint
                 options.AddPolicy("Staff", policy => policy.RequireRole("Admin", "Manager", "Cashier"));
             });
 
-            builder.Services.AddHttpContextAccessor(); // For IHttpContextAccessor
+            builder.Services.AddHttpContextAccessor();
             builder.Services.AddLogging();
 
             builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
@@ -86,17 +86,23 @@ namespace SalesPoint
 
             var app = builder.Build();
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                await IdentitySeeder.SeedAdminAsync(services);
+            }
+
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
 
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapStaticAssets();
