@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SalesPoint.DTO;
@@ -17,39 +18,62 @@ namespace SalesPoint.Services
         private readonly IUserRepository _userRepository;
         private readonly IMapper _mapper;
         private readonly IConfiguration _config;
-        private readonly ILogger _logger;
+        private readonly ILogger<UserService> _logger;
+        private readonly UserManager<User> _userManager;
+
 
         public UserService(
             IUserRepository userRepository,
             IMapper mapper,
             IConfiguration config,
-            ILogger logger)
+            ILogger<UserService> logger,
+            UserManager<User> userManager)
         {
             _userRepository = userRepository;
             _mapper = mapper;
             _config = config;
             _logger = logger;
+            _userManager = userManager;
         }
 
         public async Task<UserDTO> RegisterUserAsync(UserCreateDTO userDTO)
         {
             try
             {
-                if(await _userRepository.UsernameExistsAsync(userDTO.Username)){
+                var existingByUsername = await _userManager.FindByNameAsync(userDTO.Username);
+                if (existingByUsername != null)
                     throw new BadRequestException("Username already exists");
-                }
-                if (await _userRepository.EmailExistsAsync(userDTO.Email)){
+
+                var existingByEmail = await _userManager.FindByEmailAsync(userDTO.Email);
+                if (existingByEmail != null)
                     throw new BadRequestException("Email already exists");
-                }
-                if (await _userRepository.EmployeeIdExistsAsync(userDTO.EmployeeId)){
+
+                if (await _userRepository.EmployeeIdExistsAsync(userDTO.EmployeeId))
                     throw new BadRequestException("Employee ID already exists");
+
+                var user = new User
+                {
+                    UserName = userDTO.Username,
+                    Email = userDTO.Email,
+                    Role = userDTO.Role,
+                    EmployeeId = userDTO.EmployeeId,
+                    FirstName = userDTO.FirstName,
+                    MiddleName = userDTO.MiddleName,
+                    LastName = userDTO.LastName,
+                    PhoneNumber = userDTO.Phone,
+                };
+
+                var result = await _userManager.CreateAsync(user, userDTO.Password);
+
+                if (!result.Succeeded)
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    throw new Exception("User creation failed: " + errors);
                 }
 
-                var user = _mapper.Map<User>(userDTO);
-                user.Password = HashPassword(userDTO.Password);
+                await _userManager.AddToRoleAsync(user, userDTO.Role.ToString());
 
-                var createdUser = await _userRepository.AddUserAsync(user);
-                return _mapper.Map<UserDTO>(createdUser);
+                return _mapper.Map<UserDTO>(user);
             }
             catch (Exception ex)
             {
@@ -62,18 +86,16 @@ namespace SalesPoint.Services
         {
             try
             {
-                var user = await _userRepository.GetUserByUsernameAsync(loginDTO.Username);
-                if( user == null || !VerifyPassword(loginDTO.Password, user.Password))
-                {
+                var user = await _userManager.FindByNameAsync(loginDTO.Username);
+                if (user == null || !await _userManager.CheckPasswordAsync(user, loginDTO.Password))
                     throw new UnauthorizedException("Invalid username or password");
-                }
 
-                var token = GenerateJwtToken(user);
+                var token = await GenerateJwtToken(user);
 
                 return new AuthResponseDTO
                 {
                     Token = token,
-                    Expiration = DateTime.UtcNow.AddHours(Convert.ToDouble(_config["Jwt:ExpireHours"])),
+                    Expiration = DateTime.Now.AddHours(Convert.ToDouble(_config["Jwt:ExpireHours"])),
                     User = _mapper.Map<UserDTO>(user),
                 };
             }
@@ -84,11 +106,11 @@ namespace SalesPoint.Services
             }
         }
 
-        public async Task<UserDTO> GetUserByIdAsync(int id)
+        public async Task<UserDTO> GetUserByIdAsync(string id)
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(id);
+                var user = await _userManager.FindByIdAsync(id);
                 if(user == null) throw new NotFoundException("User not found");
                 return _mapper.Map<UserDTO>(user);
             }
@@ -117,54 +139,48 @@ namespace SalesPoint.Services
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(userDTO.Id);
+                var user = await _userManager.FindByIdAsync(userDTO.Id.ToString());
                 if (user == null) throw new NotFoundException("User not found");
 
-                if(!string.IsNullOrEmpty(userDTO.Email) && user.Email != userDTO.Email)
+                if (!string.IsNullOrEmpty(userDTO.Email) && user.Email != userDTO.Email)
                 {
-                    if(await _userRepository.EmailExistsAsync(userDTO.Email))
-                    {
-                        throw new BadRequestException("Email already exist");
-                    }
+                    var emailExists = await _userManager.FindByEmailAsync(userDTO.Email);
+                    if (emailExists != null && emailExists.Id != user.Id)
+                        throw new BadRequestException("Email already exists");
+
                     user.Email = userDTO.Email;
                 }
 
                 if (!string.IsNullOrEmpty(userDTO.Password))
                 {
-                    user.Password = HashPassword(userDTO.Password);
+                    var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+                    var resetResult = await _userManager.ResetPasswordAsync(user, token, userDTO.Password);
+
+                    if (!resetResult.Succeeded)
+                        throw new BadRequestException("Password update failed: " + string.Join(", ", resetResult.Errors.Select(e => e.Description)));
                 }
 
-                if (userDTO.Role.HasValue)
+                if (userDTO.Role.HasValue && !await _userManager.IsInRoleAsync(user, userDTO.Role.Value.ToString()))
                 {
-                    user.Role = userDTO.Role.Value;
+                    // Remove current roles
+                    var currentRoles = await _userManager.GetRolesAsync(user);
+                    await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+                    // Assign new role
+                    await _userManager.AddToRoleAsync(user, userDTO.Role.Value.ToString());
                 }
 
-                if (!string.IsNullOrEmpty(userDTO.EmployeeId))
-                {
-                    user.EmployeeId = userDTO.EmployeeId;
-                }
+                user.EmployeeId = userDTO.EmployeeId ?? user.EmployeeId;
+                user.FirstName = userDTO.FirstName ?? user.FirstName;
+                user.MiddleName = userDTO.MiddleName ?? user.MiddleName;
+                user.LastName = userDTO.LastName ?? user.LastName;
+                user.PhoneNumber = userDTO.Phone ?? user.PhoneNumber;
 
-                if (!string.IsNullOrEmpty(userDTO.FirstName))
-                {
-                    user.FirstName = userDTO.FirstName;
-                }
+                var updateResult = await _userManager.UpdateAsync(user);
 
-                if (!string.IsNullOrEmpty(userDTO.MiddleName))
-                {
-                    user.MiddleName = userDTO.MiddleName;
-                }
+                if (!updateResult.Succeeded)
+                    throw new Exception("User update failed: " + string.Join(", ", updateResult.Errors.Select(e => e.Description)));
 
-                if (!string.IsNullOrEmpty(userDTO.LastName))
-                {
-                    user.LastName = userDTO.LastName;
-                }
-
-                if (!string.IsNullOrEmpty(userDTO.Phone))
-                {
-                    user.Phone = userDTO.Phone;
-                }
-
-                await _userRepository.UpdateUserAsync(user);
                 return _mapper.Map<UserDTO>(user);
             }
             catch (Exception ex)
@@ -174,13 +190,16 @@ namespace SalesPoint.Services
             }
         }
 
-        public async Task DeleteUserAsync(int id)
+        public async Task DeleteUserAsync(string id)
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(id);
-                if (user != null) throw new NotFoundException("User not found");
-                await _userRepository.DeleteUserAsync(id);
+                var user = await _userManager.FindByIdAsync(id);
+                if (user == null)
+                    throw new NotFoundException("User not found");
+
+                user.DeletedAt = DateTime.Now;
+                await _userManager.UpdateAsync(user);
             }
             catch (Exception ex)
             {
@@ -189,20 +208,21 @@ namespace SalesPoint.Services
             }
         }
 
-        public async Task ChangePassword(int userId, ChangePasswordDTO changePasswordDTO)
+        public async Task ChangePassword(string userId, ChangePasswordDTO dto)
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(userId);
-                if (user != null) throw new NotFoundException("User not found");
-                if (!VerifyPassword(changePasswordDTO.CurrentPassword, user.Password)) throw new BadRequestException("Current password is incorrect");
-                
-                user.Password = changePasswordDTO.CurrentPassword;
-                await _userRepository.UpdateUserAsync(user);
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                    throw new NotFoundException("User not found");
+
+                var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+                if (!result.Succeeded)
+                    throw new BadRequestException("Failed to change password: " + string.Join(", ", result.Errors.Select(e => e.Description)));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error changing password of user with id: {userId}");
+                _logger.LogError(ex, $"Error changing password of user {userId}");
                 throw;
             }
         }
@@ -211,8 +231,8 @@ namespace SalesPoint.Services
         {
             try
             {
-                var user = await _userRepository.GetUserByUsernameAsync(username);
-                return user != null && VerifyPassword(password, user.Password);
+                var user = await _userManager.FindByNameAsync(username);
+                return user != null && await _userManager.CheckPasswordAsync(user, password);
             }
              catch (Exception ex)
             {
@@ -236,18 +256,19 @@ namespace SalesPoint.Services
             return hashOfInput == storedHash;   
         }
 
-        private string GenerateJwtToken(User user)
+        private async Task<string> GenerateJwtToken(User user)
         {
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
 
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var roles = await _userManager.GetRolesAsync(user);
+            var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.ToString())
+                new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? "Unknown")
             };
 
             var token = new JwtSecurityToken(

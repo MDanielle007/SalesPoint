@@ -93,7 +93,7 @@ namespace SalesPoint.Repositories
 
         public async Task UpdateProductAsync(Product product)
         {
-            product.UpdatedAt = DateTime.UtcNow;
+            product.UpdatedAt = DateTime.Now;
             _context.Products.Update(product);
             await _context.SaveChangesAsync();
         }
@@ -103,7 +103,7 @@ namespace SalesPoint.Repositories
             var product = await GetProductByIdAsync(id);
             if (product != null)
             {
-                product.DeletedAt = DateTime.UtcNow;
+                product.DeletedAt = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

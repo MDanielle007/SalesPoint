@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SalesPoint.Data;
 using SalesPoint.Interfaces;
+using SalesPoint.Models;
 using SalesPoint.Repositories;
 using SalesPoint.Services;
 using System;
@@ -21,6 +24,18 @@ namespace SalesPoint
             builder.Services.AddControllersWithViews();
             // Add DB Context
             builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnectionString")));
+            // Add Identity User
+            builder.Services.AddIdentity<User, IdentityRole>(options =>
+            {
+                // Optional: password policy
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+            })
+                .AddEntityFrameworkStores<AppDbContext>() // Fix: Ensure the correct namespace is included
+                .AddDefaultTokenProviders();
+
             // Add JWT Authentication
             builder.Services.AddAuthentication(options =>
             {
@@ -47,6 +62,8 @@ namespace SalesPoint
                 options.AddPolicy("Staff", policy => policy.RequireRole("Admin", "Manager", "Cashier"));
             });
 
+            builder.Services.AddHttpContextAccessor(); // For IHttpContextAccessor
+            builder.Services.AddLogging();
 
             builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
@@ -63,7 +80,7 @@ namespace SalesPoint
             builder.Services.AddScoped<IUserService, UserService>();
 
             builder.Services.AddScoped<ITransactionProductRepository, TransactionProductRepository>();
-            
+
             builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
             builder.Services.AddScoped<ITransactionService, TransactionService>();
 

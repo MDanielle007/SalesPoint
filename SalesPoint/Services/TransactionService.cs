@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Identity;
 using SalesPoint.DTO;
 using SalesPoint.Exceptions;
 using SalesPoint.Interfaces;
@@ -12,22 +13,22 @@ namespace SalesPoint.Services
     {
         private readonly ITransactionRepository _transactionRepository;
         private readonly ITransactionProductRepository _transactionProductRepository;
-        private readonly IUserRepository _userRepository;
+        private readonly UserManager<User> _userManager;
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
-        private readonly ILogger _logger;
+        private readonly ILogger<TransactionService> _logger;
 
         public TransactionService(
             ITransactionRepository transactionRepository,
             ITransactionProductRepository transactionProductRepository,
-            IUserRepository userRepository,
+            UserManager<User> userManager,
             IProductRepository productRepository,
             IMapper mapper,
-            ILogger logger)
+            ILogger<TransactionService> logger)
         {
             _transactionRepository = transactionRepository;
             _transactionProductRepository = transactionProductRepository;
-            _userRepository = userRepository;
+            _userManager = userManager;
             _productRepository = productRepository;
             _mapper = mapper;
             _logger = logger;
@@ -39,7 +40,7 @@ namespace SalesPoint.Services
 
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(transactionDTO.UserId);
+                var user = await _userManager.FindByIdAsync(transactionDTO.UserId);
 
                 if (user == null)
                 {

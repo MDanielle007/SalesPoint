@@ -17,7 +17,7 @@ namespace SalesPoint.Services
             _contextAccessor = contextAccessor;
         }
 
-        public async Task LogAsync(int userId, string action, string model, int recordId, string description, object? changes = null)
+        public async Task LogAsync(string userId, string action, string model, int recordId, string description, object? changes = null)
         {
             var log = new AuditLog
             {

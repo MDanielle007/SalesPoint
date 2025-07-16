@@ -36,7 +36,7 @@ namespace SalesPoint.Repositories
 
         public async Task UpdateCategory(Category category)
         {
-            category.UpdatedAt = DateTime.UtcNow;
+            category.UpdatedAt = DateTime.Now;
             _context.Categories.Update(category);
             await _context.SaveChangesAsync();
         }
@@ -46,7 +46,7 @@ namespace SalesPoint.Repositories
             var category = await GetCategoryByIdAsync(id);
             if (category != null)
             {
-                category.DeletedAt = DateTime.UtcNow;
+                category.DeletedAt = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
         }

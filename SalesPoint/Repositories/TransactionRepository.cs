@@ -43,9 +43,9 @@ namespace SalesPoint.Repositories
                 query = query.Include(u => u.User).Include(p => p.Products).ThenInclude(tp => tp.Product);
             }
 
-            if (transactionFilterDTO.UserId.HasValue)
+            if (!string.IsNullOrEmpty(transactionFilterDTO.UserId))
             {
-                query = query.Where(t => t.UserId == transactionFilterDTO.UserId.Value);
+                query = query.Where(t => t.UserId == transactionFilterDTO.UserId);
             }
 
             if (transactionFilterDTO.StartDate.HasValue)

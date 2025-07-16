@@ -6,7 +6,7 @@ namespace SalesPoint.DTO
     public class TransactionDTO
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; }
         public string UserName { get; set; }
         public decimal AmountPaid { get; set; }
         public decimal TotalAmount {  get; set; }
@@ -19,7 +19,7 @@ namespace SalesPoint.DTO
     public class TransactionCreateDTO
     {
         [Required]
-        public int UserId { get; set; }
+        public string UserId { get; set; }
 
         [Required, Range(0.01, double.MaxValue)]
         public decimal AmountPaid { get; set; }
@@ -30,7 +30,7 @@ namespace SalesPoint.DTO
 
     public class TransactionFilterDTO
     {
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public TransactionStatus? Status { get; set; }
