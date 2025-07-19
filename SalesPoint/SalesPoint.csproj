@@ -31,4 +31,11 @@
     <Folder Include="wwwroot\js\sales\" />
   </ItemGroup>
 
+	<PropertyGroup>
+		<TailwindVersion>latest</TailwindVersion>
+		<TailwindInputStyleSheetPath>wwwroot/css/input.css</TailwindInputStyleSheetPath>
+		<TailwindOutputStyleSheetPath>wwwroot/css/output.css</TailwindOutputStyleSheetPath>
+	</PropertyGroup>
+
+	<Import Project="Tailwind.targets" />
 </Project>
