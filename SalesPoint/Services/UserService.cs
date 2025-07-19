@@ -92,11 +92,25 @@ namespace SalesPoint.Services
 
                 var token = await GenerateJwtToken(user);
 
+                var userDto = new UserDTO
+                {
+                    Id = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    Role = user.Role,
+                    EmployeeId = user.EmployeeId,
+                    FirstName = user.FirstName,
+                    MiddleName = user.MiddleName,
+                    LastName = user.LastName
+                };
+
+
                 return new AuthResponseDTO
                 {
                     Token = token,
                     Expiration = DateTime.Now.AddHours(Convert.ToDouble(_config["Jwt:ExpireHours"])),
-                    User = _mapper.Map<UserDTO>(user),
+                    User = _mapper.Map<UserDTO>(userDto),
                 };
             }
             catch (Exception ex)

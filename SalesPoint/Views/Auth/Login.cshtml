@@ -1,0 +1,139 @@
+﻿@model SalesPoint.ViewModels.LoginViewModel
+
+@{
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+
+    ViewData["Title"] = "Login";
+}
+
+<div class="h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                Sign in to your account
+            </h2>
+        </div>
+        <form id="loginForm" class="mt-8 space-y-6">
+            <div class="rounded-md space-y-4">
+                <div>
+                    <label for="Username" class="sr-only">Username</label>
+                    <input id="Username" name="Username" type="text" autocomplete="username" required
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Username" value="@Model?.Username">
+                    <div id="usernameError" class="mt-1 text-sm text-red-600 hidden"></div>
+                </div>
+                <div>
+                    <label for="Password" class="sr-only">Password</label>
+                    <input id="Password" name="Password" type="password" autocomplete="current-password" required
+                           class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                           placeholder="Password">
+                    <div id="passwordError" class="mt-1 text-sm text-red-600 hidden"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" name="remember-me" type="checkbox"
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                        Remember me
+                    </label>
+                </div>
+
+                <div class="text-sm">
+                    <a href="#" class="font-medium text-blue-600 hover:text-blue-500">
+                        Forgot your password?
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button id="loginButton" type="submit"
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <span id="buttonText">Sign in</span>
+                    <span id="buttonSpinner" class="hidden ml-2">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+
+            <div id="generalError" class="text-sm text-red-600 text-center hidden"></div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+
+                // Reset error states
+                $('.text-red-600').addClass('hidden').text('');
+                $('#generalError').addClass('hidden').text('');
+
+                // Show loading state
+                $('#buttonText').text('Signing in...');
+                $('#buttonSpinner').removeClass('hidden');
+                $('#loginButton').prop('disabled', true);
+
+                var formData = {
+                    Username: $('#Username').val(),
+                    Password: $('#Password').val()
+                };
+
+                $.ajax({
+                    url: '/login',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        // Store token (consider using more secure storage)
+                        localStorage.setItem('authToken', response.token);
+
+                        // Redirect based on role or returnUrl
+                        var redirectUrl = response.redirectUrl || '/';
+                        window.location.href = redirectUrl;
+                    },
+                    error: function(xhr) {
+                        // Reset button state
+                        $('#buttonText').text('Sign in');
+                        $('#buttonSpinner').addClass('hidden');
+                        $('#loginButton').prop('disabled', false);
+
+                        // Handle validation errors
+                        if (xhr.status === 400) {
+                            var errors = xhr.responseJSON;
+                            if (errors && typeof errors === 'object') {
+                                if (errors.errors) {
+                                    // ModelState errors from ASP.NET
+                                    $.each(errors.errors, function(key, value) {
+                                        var errorElement = $('#' + key.toLowerCase() + 'Error');
+                                        errorElement.removeClass('hidden').text(value.join(' '));
+                                    });
+                                } else if (errors.message) {
+                                    // Custom error message
+                                    $('#generalError').removeClass('hidden').text(errors.message);
+                                }
+                            }
+                        } else if (xhr.status === 401) {
+                            $('#generalError').removeClass('hidden').text('Invalid username or password');
+                        } else {
+                            $('#generalError').removeClass('hidden').text('An error occurred during login. Please try again.');
+                        }
+                    }
+                });
+            });
+
+            // Clear errors when user starts typing
+            $('input').on('input', function() {
+                var inputId = $(this).attr('id');
+                $('#' + inputId + 'Error').addClass('hidden');
+                $('#generalError').addClass('hidden');
+            });
+        });
+    </script>
+}
