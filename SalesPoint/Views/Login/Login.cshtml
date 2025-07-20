@@ -82,7 +82,8 @@
 
                 var formData = {
                     Username: $('#Username').val(),
-                    Password: $('#Password').val()
+                    Password: $('#Password').val(),
+                    RememberMe: $('#remember-me').is(':checked')
                 };
 
                 $.ajax({
@@ -91,12 +92,18 @@
                     contentType: 'application/json',
                     data: JSON.stringify(formData),
                     success: function(response) {
-                        // Store token (consider using more secure storage)
-                        localStorage.setItem('authToken', response.token);
+                        // Store token in localStorage if needed (for API calls)
+                        if (response.token) {
+                            localStorage.setItem('authToken', response.token);
+                        }
 
-                        // Redirect based on role or returnUrl
-                        var redirectUrl = response.redirectUrl || '/';
-                        window.location.href = redirectUrl;
+                        // Redirect to the dashboard or specified URL
+                        if (response.redirectUrl) {
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            // Fallback redirect
+                            window.location.href = '/dashboard';
+                        }
                     },
                     error: function(xhr) {
                         // Reset button state

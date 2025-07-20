@@ -1,4 +1,4 @@
-﻿using SalesPoint.Enum;
+﻿using SalesPoint.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SalesPoint.Models

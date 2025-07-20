@@ -1,4 +1,4 @@
-﻿using SalesPoint.Enum;
+﻿using SalesPoint.Enums;
 
 namespace SalesPoint.Models
 {

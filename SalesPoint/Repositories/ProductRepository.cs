@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SalesPoint.Data;
 using SalesPoint.DTO;
-using SalesPoint.Enum;
+using SalesPoint.Enums;
 using SalesPoint.Interfaces;
 using SalesPoint.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
