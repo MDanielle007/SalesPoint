@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using SalesPoint.Enum;
+using SalesPoint.Enums;
 using SalesPoint.Models;
 
 namespace SalesPoint.Data

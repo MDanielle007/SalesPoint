@@ -1,4 +1,4 @@
-﻿namespace SalesPoint.Enum
+﻿namespace SalesPoint.Enums
 {
     public enum ProductStatus
     {

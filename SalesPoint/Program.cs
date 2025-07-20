@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using SalesPoint.Data;
 using SalesPoint.Interfaces;
+using SalesPoint.Middleware;
 using SalesPoint.Models;
 using SalesPoint.Repositories;
 using SalesPoint.Services;
@@ -97,12 +98,13 @@ namespace SalesPoint
             {
                 app.UseExceptionHandler("/Home/Error");
                 app.UseHsts();
-            }
+            }  
 
             app.UseHttpsRedirection();
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseMiddleware<JwtMiddleware>();
             app.UseAuthorization();
 
             app.MapStaticAssets();
@@ -118,6 +120,15 @@ namespace SalesPoint
                 ).WithStaticAssets();
             });
 
+            app.Use(async (context, next) =>
+            {
+                await next();
+
+                if (context.Response.StatusCode == 401 && !context.Request.Path.StartsWithSegments("/login"))
+                {
+                    context.Response.Redirect("/login");
+                }
+            });
 
             app.Run();
         }

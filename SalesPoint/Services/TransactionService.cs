@@ -64,7 +64,7 @@ namespace SalesPoint.Services
                         throw new NotFoundException($"Product with ID {productDTO.ProductId} not found");
                     }
 
-                    if (product.Status != Enum.ProductStatus.Active)
+                    if (product.Status != Enums.ProductStatus.Active)
                     {
                         throw new BadRequestException($"Product {product.Name} is not available for sale");
                     }
@@ -102,7 +102,7 @@ namespace SalesPoint.Services
                     TotalAmount = totalAmount,
                     AmountPaid = transactionDTO.AmountPaid,
                     ChangeAmount = transactionDTO.AmountPaid - totalAmount,
-                    Status = Enum.TransactionStatus.Completed,
+                    Status = Enums.TransactionStatus.Completed,
                     DateTime = DateTime.Now,
                     Products = transactionProducts
                 };
@@ -201,7 +201,7 @@ namespace SalesPoint.Services
                     throw new NotFoundException($"Transaction with id {transactionId} not found");
                 }
 
-                if(transaction.Status == Enum.TransactionStatus.Cancelled)
+                if(transaction.Status == Enums.TransactionStatus.Cancelled)
                 {
                     throw new BadRequestException($"Transaction with id {transactionId} is already cancelled");
                 }
@@ -217,7 +217,7 @@ namespace SalesPoint.Services
                     }
                 }
 
-                transaction.Status = Enum.TransactionStatus.Cancelled;
+                transaction.Status = Enums.TransactionStatus.Cancelled;
                 await _transactionRepository.UpdateTransactionAsync(transaction);
 
                 transactionScopes.Complete();
