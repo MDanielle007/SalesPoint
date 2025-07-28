@@ -37,7 +37,7 @@
             @if (role == UserRole.Admin || role == UserRole.Manager)
             {
                 <li>
-                    <a href="@Url.Action("Index", "Dashboard")" class="flex gap-3 items-center p-2 text-slate-300 hover:bg-slate-700 hover:text-white rounded">
+                    <a href="@Url.Action("Index", "Dashboard", new {area="Management"})" class="flex gap-3 items-center p-2 text-slate-300 hover:bg-slate-700 hover:text-white rounded">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-dashboard">
                             <rect width="7" height="9" x="3" y="3" rx="1" />
                             <rect width="7" height="5" x="14" y="3" rx="1" />
@@ -175,7 +175,7 @@
     <div class="p-4 border-t border-slate-700">
         <div class="flex items-center">
             <div class="flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 bg-slate-800 rounded-full p-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 bg-slate-800 rounded-full p-2 lucide lucide-user">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                 </svg>

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -85,6 +87,31 @@ namespace SalesPoint
             builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
             builder.Services.AddScoped<ITransactionService, TransactionService>();
 
+
+            builder.Services.AddControllersWithViews(options =>
+            {
+                var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                options.Filters.Add(new AuthorizeFilter(policy));
+            });
+
+            builder.Services.AddRouting(options =>
+            {
+                options.LowercaseUrls = true;
+            });
+
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/login";
+                options.AccessDeniedPath = "/login";
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.Redirect(context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+            });
+
             var app = builder.Build();
 
             using (var scope = app.Services.CreateScope())
@@ -103,11 +130,13 @@ namespace SalesPoint
             app.UseHttpsRedirection();
             app.UseRouting();
 
+            app.MapStaticAssets();
+            app.UseStaticFiles();
+
             app.UseAuthentication();
             app.UseMiddleware<JwtMiddleware>();
             app.UseAuthorization();
 
-            app.MapStaticAssets();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllerRoute(
