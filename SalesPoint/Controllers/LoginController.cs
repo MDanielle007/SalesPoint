@@ -8,6 +8,7 @@ using System.Security.Claims;
 namespace SalesPoint.Controllers
 {
     [Route("")]
+    [AllowAnonymous]
     public class LoginController : Controller
     {
         [HttpGet("login")]
